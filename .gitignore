@@ -1,0 +1,22 @@
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Editor & OS artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
+*.log
