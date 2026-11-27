@@ -45,16 +45,16 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
 N_POSITIONS = 25
 WIRE_SPACING_MM = 5.0
 WIRE_ARC_DEG = 130.0
-LEFT_SUPPORT_DEG = 50.0
-REAR_SWING_DEG = 130.0
-RIGHT_SUPPORT_DEG = 50.0
+LEFT_SUPPORT_DEG = 40.0
+REAR_SWING_DEG = 152.0
+RIGHT_SUPPORT_DEG = 38.0
 
 ANGLE_STEP_DEG = WIRE_ARC_DEG / (N_POSITIONS - 1)  # 5.4167 deg
 
-# Radii: 24 spaces * 5mm / rad(130 deg) = 52.89 mm pitch radius
-R_PITCH = (WIRE_SPACING_MM * (N_POSITIONS - 1)) / math.radians(WIRE_ARC_DEG)  # ~52.89 mm
+# Radii: +10mm (+1cm) outward expansion for full spindle carriage swing clearance (~62.89 mm pitch radius)
+R_PITCH = (WIRE_SPACING_MM * (N_POSITIONS - 1)) / math.radians(WIRE_ARC_DEG) + 10.0  # ~62.89 mm
 OUTER_LINE_THICKNESS = 2.2      # Outer line / enclosing rim thickness
-PLATE_OUTER_R = R_PITCH + 5.5   # ~58.4 mm outer perimeter
+PLATE_OUTER_R = R_PITCH + 5.5   # ~68.39 mm outer perimeter
 GROOVE_DEPTH = 8.0              # Depth of wire clips
 GROOVE_WIDTH = 2.6              # Width of wire clips
 PLATE_THICKNESS = 5.0
@@ -65,19 +65,19 @@ CLEARANCE_H = DRUM_HEIGHT - 2 * PLATE_THICKNESS  # 58.0 mm between plates
 WALL_THICKNESS = 5.5
 
 # Support links in the housing space:
-LINK_RADIUS = 49.0
+LINK_RADIUS = 59.0
 LINK_OD = 9.0
 LINK_ID = 2.8                   # M3 pilot tap bore
-LINK_ANGLES = [155.0, 335.0]
+LINK_ANGLES = [150.0, 341.0]
 
 # Heavy-Duty External Base Mounting Feet:
-MOUNT_TAB_RADIUS = 74.0         # Center radius of mounting screw holes
+MOUNT_TAB_RADIUS = 84.0         # Center radius of mounting screw holes (+10mm with outer rim)
 MOUNT_TAB_HOLE_D = 4.5          # 4.5mm clearance for M4 bolt/screw
 MOUNT_TAB_CBORE_D = 8.5         # 8.5mm counterbore recess for DIN 912 M4 cap screw head
 MOUNT_TAB_CBORE_DEPTH = 2.8     # 2.8mm counterbore depth
 MOUNT_TAB_WIDTH = 18.0          # Flange ear width
 MOUNT_TAB_THICKNESS = 6.0       # Reinforced 6mm thickness
-MOUNT_TAB_ANGLES = [138.0, 174.0, 316.0, 352.0]
+MOUNT_TAB_ANGLES = [138.0, 165.0, 327.0, 352.0]
 
 # Servo 1: MG996R Standard Metal-Gear Servo Dimensions
 MG996_L = 40.7
@@ -87,11 +87,13 @@ MG996_TOTAL_H = 43.0            # Height to spline tip
 MG996_EAR_SPAN = 54.0
 MG996_SPLINE_OFFSET = 10.0      # Spline center from front edge
 
-# Servo 2: SG90 / MG90S Micro Servo (Selection Turret Drive mounted on Top Plate)
-SG90_L = 22.8
-SG90_W = 12.2
-SG90_H = 24.5
-SG90_SPLINE_OFFSET = 5.8        # Distance from front edge to spline axis
+# Servo 2: MG90S Micro Servo (Selection Turret Drive mounted on Top Plate — TowerPro MG90S Datasheet)
+SG90_L = 22.8                   # Datasheet body length
+SG90_W = 12.2                   # Datasheet body width
+SG90_H = 28.5                   # Datasheet casing height (32.5mm total with gear tower/spline)
+SG90_SPLINE_OFFSET = 6.0        # Distance from front edge to spline axis
+MG90S_HOLE_PITCH = 27.5         # Datasheet mounting hole center-to-center pitch
+MG90S_FLANGE_H = 7.5            # Distance from spline-end casing face to mounting ear underside (28.5 - 18.5 - 2.5)
 
 # Option 1: 180° Direct Pinion Kinematics
 # Stroke = R_p * pi = 21.25 * 3.14159 = 66.76 mm (~6.68 cm)
@@ -100,10 +102,10 @@ PINION_HEIGHT = 8.0
 PINION_TEETH = 34               # Module 1.25
 RACK_WIDTH = 8.0
 RACK_HEIGHT = 9.0
-RACK_LENGTH = 125.0             # Extended rack for 6.68cm stroke
-PUSHER_HEAD_W = 14.0
-PUSHER_HEAD_H = 13.0
-PUSHER_HEAD_L = 5.0
+RACK_LENGTH = 145.0             # Extended toothed bar (+50mm tapered neck = 195mm total for 10+ cm push past R=68.4mm)
+PUSHER_HEAD_W = 4.0             # Pointed 4.0mm tip width (clears 5.50-5.95mm groove pitch)
+PUSHER_HEAD_H = 4.0             # Pointed 4.0mm tip height
+PUSHER_HEAD_L = 50.0            # 50mm (5cm) tapered triangle neck from rack to tip
 
 PIVOT_SHAFT_D = 4.2             # 4mm steel pivot shaft
 PIVOT_BEARING_OD = 10.0         # 624 bearing pocket (10mm OD x 4mm ID)
@@ -155,27 +157,27 @@ def make_plate_2d_contour():
     recess_r = 28.0
     pts = []
     for i in range(241):
-        a = i * 180.0 / 240.0
+        a = i * 170.0 / 240.0
         pts.append(list(polar(PLATE_OUTER_R, a)))
 
     for i in range(1, 21):
-        a = 180.0 + i * 8.0 / 20.0
+        a = 170.0 + i * 8.0 / 20.0
         t = (1.0 - math.cos(i * math.pi / 20.0)) / 2.0
         r = PLATE_OUTER_R + (recess_r - PLATE_OUTER_R) * t
         pts.append(list(polar(r, a)))
 
     for i in range(1, 101):
-        a = 188.0 + i * (302.0 - 188.0) / 100.0
+        a = 178.0 + i * (314.0 - 178.0) / 100.0
         pts.append(list(polar(recess_r, a)))
 
     for i in range(1, 21):
-        a = 302.0 + i * 8.0 / 20.0
+        a = 314.0 + i * 8.0 / 20.0
         t = (1.0 - math.cos(i * math.pi / 20.0)) / 2.0
         r = recess_r + (PLATE_OUTER_R - recess_r) * t
         pts.append(list(polar(r, a)))
 
     for i in range(1, 81):
-        a = 310.0 + i * 50.0 / 80.0
+        a = 322.0 + i * 38.0 / 80.0
         pts.append(list(polar(PLATE_OUTER_R, a)))
 
     return pts
@@ -303,29 +305,29 @@ def make_plate_base(thickness, round_top=True, round_bottom=False, round_rim_top
     cs = CrossSection([poly_rz])
     disc = Manifold.revolve(cs, circular_segments=240)
 
-    # Cut out rear spindle swing sector (180° to 310°) beyond R = 28.0mm
+    # Cut out rear spindle & rack tail swing sector (170° to 322°) beyond R = 28.0mm
     poly_cut = []
     recess_r = 28.0
     r_max = r_outer + 12.0
 
     for i in range(21):
-        a = 180.0 + i * 8.0 / 20.0
+        a = 170.0 + i * 8.0 / 20.0
         t = (1.0 - math.cos(i * math.pi / 20.0)) / 2.0
         r = recess_r + (r_outer - recess_r) * (1.0 - t)
         poly_cut.append(list(polar(r, a)))
 
     for i in range(1, 101):
-        a = 188.0 + i * (302.0 - 188.0) / 100.0
+        a = 178.0 + i * (314.0 - 178.0) / 100.0
         poly_cut.append(list(polar(recess_r, a)))
 
     for i in range(1, 21):
-        a = 302.0 + i * 8.0 / 20.0
+        a = 314.0 + i * 8.0 / 20.0
         t = (1.0 - math.cos(i * math.pi / 20.0)) / 2.0
         r = recess_r + (r_outer - recess_r) * t
         poly_cut.append(list(polar(r, a)))
 
     for i in range(61):
-        a = 310.0 - i * (310.0 - 180.0) / 60.0
+        a = 322.0 - i * (322.0 - 170.0) / 60.0
         poly_cut.append(list(polar(r_max, a)))
 
     cs_cut = CrossSection([poly_cut[::-1]])
@@ -348,11 +350,12 @@ def make_plate_base(thickness, round_top=True, round_bottom=False, round_rim_top
     plate = base - cutters
 
     # Add inner rim fillet curves on top face (Base Chassis) and underside (Top Plate)
+    r_in_fillet = PLATE_OUTER_R - 1.8
     if round_rim_top:
-        cut_in_top = make_inner_rim_fillet_cutter(56.6, thickness, 0.8, round_top=True)
+        cut_in_top = make_inner_rim_fillet_cutter(r_in_fillet, thickness, 0.8, round_top=True)
         plate = plate - cut_in_top
     if round_rim_bottom:
-        cut_in_bot = make_inner_rim_fillet_cutter(56.6, 0.0, 0.8, round_top=False)
+        cut_in_bot = make_inner_rim_fillet_cutter(r_in_fillet, 0.0, 0.8, round_top=False)
         plate = plate - cut_in_bot
 
     return plate
@@ -412,19 +415,20 @@ def make_base_chassis():
     bearing_pocket = cylinder(4.0, PIVOT_BEARING_OD / 2.0, center=False, fn=64).translate([0, 0, PLATE_THICKNESS - 4.0])
     base = base - bearing_pocket
 
-    # 1. Extrude Left 50° Wall and Right 50° Wall directly from base with bullnose ends
-    left_wall = make_curved_wall_manifold(130.0, 50.0, CLEARANCE_H).translate([0, 0, PLATE_THICKNESS])
-    right_wall = make_curved_wall_manifold(310.0, 50.0, CLEARANCE_H).translate([0, 0, PLATE_THICKNESS])
+    # 1. Extrude Left 40° Wall (130°-170°) and Right 38° Wall (322°-360°) with bullnose ends
+    left_wall = make_curved_wall_manifold(130.0, LEFT_SUPPORT_DEG, CLEARANCE_H).translate([0, 0, PLATE_THICKNESS])
+    right_wall = make_curved_wall_manifold(322.0, RIGHT_SUPPORT_DEG, CLEARANCE_H).translate([0, 0, PLATE_THICKNESS])
 
-    # 2. Extrude Support Link Pillars (at 155° and 335°)
-    lx, ly = polar(LINK_RADIUS, 155.0)
-    rx, ry = polar(LINK_RADIUS, 335.0)
+    # 2. Extrude Support Link Pillars
+    lx, ly = polar(LINK_RADIUS, LINK_ANGLES[0])
+    rx, ry = polar(LINK_RADIUS, LINK_ANGLES[1])
     left_pillar = cylinder(CLEARANCE_H, LINK_OD / 2.0, center=False, fn=64).translate([lx, ly, PLATE_THICKNESS])
     right_pillar = cylinder(CLEARANCE_H, LINK_OD / 2.0, center=False, fn=64).translate([rx, ry, PLATE_THICKNESS])
 
     # 3. 4 Smooth Curved Mounting Feet with Tangential Fillets & Concave Ski-Jump Gussets
+    r_foot_root = PLATE_OUTER_R - 4.5
     poly_foot = []
-    poly_foot.append([45.0, -(MOUNT_TAB_WIDTH / 2.0 + 3.0)])
+    poly_foot.append([r_foot_root, -(MOUNT_TAB_WIDTH / 2.0 + 3.0)])
     poly_foot.append([MOUNT_TAB_RADIUS - 2.0, -MOUNT_TAB_WIDTH / 2.0])
     N_LUG = 24
     for i in range(N_LUG + 1):
@@ -433,19 +437,21 @@ def make_base_chassis():
         py = (MOUNT_TAB_WIDTH / 2.0) * math.sin(th)
         poly_foot.append([px, py])
     poly_foot.append([MOUNT_TAB_RADIUS - 2.0, MOUNT_TAB_WIDTH / 2.0])
-    poly_foot.append([45.0, MOUNT_TAB_WIDTH / 2.0 + 3.0])
+    poly_foot.append([r_foot_root, MOUNT_TAB_WIDTH / 2.0 + 3.0])
     cs_foot = CrossSection([poly_foot]).offset(-1.0, JoinType.Round, circular_segments=32).offset(1.0, JoinType.Round, circular_segments=32)
     foot_m = Manifold.extrude(cs_foot, MOUNT_TAB_THICKNESS)
 
     # Concave ski-jump gusset sweeping smoothly from 24mm wall height down to 6mm foot
+    r_g_in = PLATE_OUTER_R - 4.0
+    r_g_out = PLATE_OUTER_R + 7.6
     poly_g = []
     N_G = 16
     for i in range(N_G + 1):
         t = i / N_G
-        gx = 50.0 + (66.0 - 50.0) * t
+        gx = r_g_in + (r_g_out - r_g_in) * t
         gz = MOUNT_TAB_THICKNESS + (24.0 - MOUNT_TAB_THICKNESS) * ((1.0 - t) ** 2)
         poly_g.append([gx, gz])
-    poly_g.append([50.0, MOUNT_TAB_THICKNESS])
+    poly_g.append([r_g_in, MOUNT_TAB_THICKNESS])
     cs_g = CrossSection([poly_g[::-1]])  # CCW winding
     gusset_m = Manifold.extrude(cs_g, 4.0).translate([0, 0, -2.0]).rotate([90, 0, 0])
 
@@ -462,7 +468,7 @@ def make_base_chassis():
     chassis = base + left_wall + right_wall + left_pillar + right_pillar + mounting_feet
 
     # Cut M3 screw pilot holes into uprights and pillars
-    for a in [142.0, 168.0, 322.0, 348.0]:
+    for a in [140.0, 162.0, 330.0, 350.0]:
         hx, hy = polar(PLATE_OUTER_R - WALL_THICKNESS / 2.0, a)
         chassis = chassis - cylinder(14.0, LINK_ID / 2.0, center=False, fn=32).translate([hx, hy, DRUM_HEIGHT - PLATE_THICKNESS - 12])
 
@@ -484,29 +490,44 @@ def make_top_plate():
     plate = plate - recess
 
     # Countersunk M3 screw holes matching side walls and pillars
-    for a in [142.0, 168.0, 322.0, 348.0]:
+    for a in [140.0, 162.0, 330.0, 350.0]:
         hx, hy = polar(PLATE_OUTER_R - WALL_THICKNESS / 2.0, a)
         hole = cylinder(PLATE_THICKNESS + 4, 1.6, center=False, fn=32).translate([hx, hy, -2])
         csink = cylinder(2.5, 3.2, center=False, fn=32).translate([hx, hy, PLATE_THICKNESS - 2.5])
         plate = plate - hole - csink
 
-    lx, ly = polar(LINK_RADIUS, 155.0)
-    rx, ry = polar(LINK_RADIUS, 335.0)
+    lx, ly = polar(LINK_RADIUS, LINK_ANGLES[0])
+    rx, ry = polar(LINK_RADIUS, LINK_ANGLES[1])
     for lx_, ly_ in [(lx, ly), (rx, ry)]:
         hole = cylinder(PLATE_THICKNESS + 4, 1.6, center=False, fn=32).translate([lx_, ly_, -2])
         csink = cylinder(2.5, 3.2, center=False, fn=32).translate([lx_, ly_, PLATE_THICKNESS - 2.5])
         plate = plate - hole - csink
 
-    # Servo 2 (SG90/MG90S) Top-Mount Housing on upper face:
-    s2_cx = -(SG90_L / 2.0 - SG90_SPLINE_OFFSET)  # -5.6 mm
-    bracket_box = box(SG90_L + 12.0, SG90_W + 8.0, 18.0, center=True).translate([s2_cx, 0, PLATE_THICKNESS + 9.0])
-    s2_cavity = box(SG90_L + 0.8, SG90_W + 0.8, 22.0, center=True).translate([s2_cx, 0, PLATE_THICKNESS + 10.0])
+    # Servo 2 (MG90S) Low-Profile Screw-Holding Standoffs on upper face (no enclosing box):
+    # Standoffs rise only MG90S_FLANGE_H (7.5mm) above top plate to meet the MG90S mounting ears;
+    # mounting holes at datasheet pitch (27.5mm center-to-center).
+    s2_cx = -(SG90_L / 2.0 - SG90_SPLINE_OFFSET)  # -5.4 mm
+    ear_x_offset = MG90S_HOLE_PITCH / 2.0         # 13.75 mm
+    standoff_h = MG90S_FLANGE_H                   # 7.5 mm
+    post1 = box(6.5, SG90_W + 2.0, standoff_h, center=False).translate(
+        [s2_cx + ear_x_offset - 3.25, -(SG90_W + 2.0) / 2.0, PLATE_THICKNESS]
+    )
+    post2 = box(6.5, SG90_W + 2.0, standoff_h, center=False).translate(
+        [s2_cx - ear_x_offset - 3.25, -(SG90_W + 2.0) / 2.0, PLATE_THICKNESS]
+    )
+    s2_body_clear = box(SG90_L + 0.6, SG90_W + 0.6, standoff_h + 2.0, center=False).translate(
+        [s2_cx - (SG90_L + 0.6) / 2.0, -(SG90_W + 0.6) / 2.0, PLATE_THICKNESS]
+    )
     spline_bore = cylinder(PLATE_THICKNESS + 4.0, 6.0, center=False, fn=48).translate([0, 0, -2.0])
 
-    s2_ear1 = cylinder(24.0, 1.2, center=False, fn=32).translate([s2_cx + SG90_L / 2.0 + 2.5, 0, 4.0])
-    s2_ear2 = cylinder(24.0, 1.2, center=False, fn=32).translate([s2_cx - SG90_L / 2.0 - 2.5, 0, 4.0])
+    s2_ear1 = cylinder(standoff_h + 4.0, 0.9, center=False, fn=32).translate(
+        [s2_cx + ear_x_offset, 0, PLATE_THICKNESS - 1.5]
+    )
+    s2_ear2 = cylinder(standoff_h + 4.0, 0.9, center=False, fn=32).translate(
+        [s2_cx - ear_x_offset, 0, PLATE_THICKNESS - 1.5]
+    )
 
-    plate = (plate + bracket_box) - s2_cavity - spline_bore - s2_ear1 - s2_ear2
+    plate = (plate + post1 + post2) - s2_body_clear - spline_bore - s2_ear1 - s2_ear2
 
     return plate.translate([0, 0, DRUM_HEIGHT - PLATE_THICKNESS])
 
@@ -547,28 +568,35 @@ def make_spindle_carriage():
     rack_z = center_z + MG996_TOTAL_H + 4.0 + 1.0  # ~54.0 mm
     s_cy = PINION_PITCH_R  # 21.25 mm
 
-    # 1. Central Pivot Hub around (0, 0) with Integrated Lower Pivot Spindle Pin
+    # 1. Central Pivot Hub around (0, 0) with Solid Lower Pivot Spindle Pin
     pivot_hub = cylinder(h, 8.0, center=False, fn=64).translate([0, 0, center_z])
-    # Lower Spindle Pivot Pin & Spacer Collar to seat into Base Chassis bearing/pocket:
-    spacer_collar = cylinder(1.0, 3.25, center=False, fn=48).translate([0, 0, center_z - 1.0])
-    pivot_pin = cylinder(3.8, 1.95, center=False, fn=48).translate([0, 0, center_z - 4.8])
-    pivot_bore = cylinder(h + 8.0, PIVOT_SHAFT_D / 2.0, center=False, fn=48).translate([0, 0, center_z - 6.0])
+    # Top turret collar (R=13.5mm, Z=58.7..62.2mm -> 3.5mm solid thickness above guide channel & pinion)
+    # with 2.0mm deep cross (+) horn pocket (Z=60.2..62.5mm) leaving a solid 1.5mm floor underneath all 4 arms!
+    top_collar = cylinder(3.5, 13.5, center=False, fn=64).translate([0, 0, 58.7])
+    # Lower Spindle Pivot Pin & Spacer Collar to seat into Base Chassis bearing/bushing (Z=1.2..6.0mm):
+    spacer_collar = cylinder(0.2, 3.25, center=False, fn=48).translate([0, 0, center_z - 0.2])
+    pivot_pin = cylinder(4.6, 1.95, center=False, fn=48).translate([0, 0, center_z - 4.8])
+    # Stop pivot_bore at center_z (6.0mm) so the solid Ø3.9mm bottom pivot_pin is preserved!
+    pivot_bore = cylinder(h + 2.0, PIVOT_SHAFT_D / 2.0, center=False, fn=48).translate([0, 0, center_z])
 
-    # Top SG90 Servo Horn Pocket + 4x M2 Screw Pilot Tap Holes:
-    horn_pocket = box(24.0, 8.0, 4.0, center=True).translate([0, 0, center_z + h - 1.5])
+    # Top MG90S Cross (+) Servo Horn Pocket (2.0mm deep, solid 1.5mm floor below) + 4x M2 Screw Pilot Holes (stop inside collar):
+    horn_pocket_x = box(24.0, 8.0, 2.5, center=True).translate([0, 0, 61.45])
+    horn_pocket_y = box(8.0, 24.0, 2.5, center=True).translate([0, 0, 61.45])
+    horn_pocket = horn_pocket_x + horn_pocket_y
     sg90_screws = None
     for xp, yp in [(-7.5, 0.0), (7.5, 0.0), (0.0, -7.5), (0.0, 7.5)]:
-        sh = cylinder(10.0, 0.95, center=False, fn=32).translate([xp, yp, center_z + h - 9.0])
+        sh = cylinder(3.2, 0.95, center=False, fn=32).translate([xp, yp, 59.2])
         sg90_screws = sh if sg90_screws is None else sg90_screws + sh
 
-    pivot = (pivot_hub + spacer_collar + pivot_pin) - pivot_bore - horn_pocket - sg90_screws
+    pivot = ((pivot_hub + top_collar) - pivot_bore - horn_pocket - sg90_screws) + spacer_collar + pivot_pin
 
-    # 2. 100% CONTINUOUS SOLID BASE SHELF SUPPORTING SERVO (Zero cutouts! Fully solid 5mm plate!)
+    # 2. 100% CONTINUOUS SOLID BASE SHELF SUPPORTING SERVO (recessed 5mm pocket for 39.8mm MG996R)
     servo_bed = box(56.0, 36.0, 5.0, center=False).translate([-38.0, 0, center_z])
+    servo_recess = box(42.0, 21.0, 4.0, center=False).translate([-31.35, s_cy - 10.5, center_z + 2.0])
 
-    # 3. Servo Mounting Bumps / Stanchions (flat horizontal landing pads for MG996 flange ears)
-    front_stanchion = box(8.0, 26.0, 32.0, center=False).translate([10.0, s_cy - 13.0, center_z])
-    rear_stanchion = box(8.0, 26.0, 32.0, center=False).translate([-38.0, s_cy - 13.0, center_z])
+    # 3. Servo Mounting Bumps / Stanchions (31mm tall -> ears at Z=37mm so MG996 screws tighten flush)
+    front_stanchion = box(8.0, 26.0, 31.0, center=False).translate([10.0, s_cy - 13.0, center_z])
+    rear_stanchion = box(8.0, 26.0, 31.0, center=False).translate([-38.0, s_cy - 13.0, center_z])
 
     # 4. 100% SOLID CONTINUOUS RACK SUPPORT BEDROCK (Zero hollow windows or thin struts! Full bedrock!):
     rack_support_block = box(80.0, 16.0, h, center=False).translate([-45.0, -16.0, center_z])
@@ -578,27 +606,31 @@ def make_spindle_carriage():
 
     carriage_solid = pivot + servo_bed + front_stanchion + rear_stanchion + rack_support_block + gusset_center
 
-    # 5. Guide Channel Cutter:
-    guide_channel_cut = box(100.0, 16.0, 9.8, center=False).translate([-55.0, -8.0, rack_z - 4.9])
+    # 5. Guide Channel Cutter (Z=49.1..58.7mm -> 9.6mm clearance for 9.0mm rack, below 58.7mm top_collar):
+    guide_channel_cut = box(100.0, 16.0, 9.6, center=False).translate([-55.0, -8.0, rack_z - 4.9])
 
-    # 6. Pinion gear rotation clearance (above rack floor, Y >= 0)
-    pinion_clearance = cylinder(12.0, 22.8, center=False, fn=64).translate([0, s_cy, rack_z - 4.0])
+    # 6. Pinion gear rotation clearance (Z=49..58.2mm, below top_collar at Z=58.7..62.2mm)
+    pinion_clearance = cylinder(9.2, 22.8, center=False, fn=64).translate([0, s_cy, rack_z - 5.0])
 
     # 7. Actuator Cover clamping screw pilot holes (2x M3 pilot: 2.8mm dia x 14mm deep)
     cov_hole1 = cylinder(14.0, 1.4, center=False, fn=32).translate([-24.0, -11.0, rack_z - 4.0])
     cov_hole2 = cylinder(14.0, 1.4, center=False, fn=32).translate([18.0, -11.0, rack_z - 4.0])
 
-    # 8. 4x M3/M4 pilot tap holes for MG996R flange ears (open vertical access!)
+    # 8. 4x M3/M4 pilot tap holes for MG996R flange ears (aligned to 31mm stanchions)
     s_holes = None
     for xp in [14.0, -34.0]:
         for yo in [-5.0, 5.0]:
-            h_ = cylinder(18.0, 1.6, center=False, fn=32).translate([xp, s_cy + yo, center_z + 18.0])
+            h_ = cylinder(18.0, 1.6, center=False, fn=32).translate([xp, s_cy + yo, center_z + 17.0])
             s_holes = h_ if s_holes is None else s_holes + h_
 
-    # 9. Cable exit notch at bottom of front stanchion
-    cable_notch = box(10.0, 12.0, 8.0, center=False).translate([9.0, s_cy - 6.0, center_z])
+    # 9. Wire routing on rear stanchion ONLY:
+    #    - Bottom through-exit (5.0mm W x 12mm H, Z=6..18mm)
+    #    - Inner-face vertical groove all the way to the top (5.0mm W x 4.5mm deep, Z=6..38mm)
+    #      while keeping the outer 3.5mm wall of rear_stanchion 100% solid!
+    wire_exit_bottom = box(12.0, 5.0, 12.0, center=False).translate([-40.0, s_cy - 2.5, center_z])
+    wire_groove_top = box(6.5, 5.0, 32.0, center=False).translate([-34.5, s_cy - 2.5, center_z])
 
-    carriage = carriage_solid - guide_channel_cut - pinion_clearance - cov_hole1 - cov_hole2 - s_holes - cable_notch
+    carriage = carriage_solid - servo_recess - guide_channel_cut - pinion_clearance - cov_hole1 - cov_hole2 - s_holes - wire_exit_bottom - wire_groove_top
     return carriage
 
 
@@ -671,13 +703,14 @@ def make_pinion_gear():
 
 
 def make_pusher_rack():
-    """Heavy-Duty Linear Toothed Rack (125mm length, module-1.25 teeth).
-       Features standard 20° trapezoidal gear teeth for smooth, rolling involute meshing,
-       plus reinforced front T-head with radiused wire cradle notch.
+    """Heavy-Duty Linear Toothed Rack (135mm toothed bar + 50mm tapered triangle head = 185mm total).
+       Preserves the fixed 8.0mm x 9.0mm module-1.25 rack cross-section for the printed spindle carriage,
+       and tapers smoothly over 50mm down to a 4.0mm x 4.0mm pointed wire-cradle tip to clear 5.0mm groove pitch
+       while delivering >= 10 cm actual push past the outer rim.
     """
     MODULE = 1.25
     PITCH = math.pi * MODULE  # 3.927 mm
-    n_teeth = int((RACK_LENGTH - 14.0) / PITCH)
+    n_teeth = int((RACK_LENGTH - 8.0) / PITCH)
     pts = []
     # Back of rack bar (extends to Y = -7.5mm so pitch line is at Y = 0)
     pts.append([-RACK_LENGTH / 2.0, -7.5])
@@ -685,7 +718,7 @@ def make_pusher_rack():
     pts.append([RACK_LENGTH / 2.0, -1.56])
 
     # 20° trapezoidal teeth rising to Y = +1.25mm
-    x_start = RACK_LENGTH / 2.0 - 6.0
+    x_start = RACK_LENGTH / 2.0 - 3.5
     for i in range(n_teeth):
         t_center_x = x_start - i * PITCH
         pts.append([t_center_x + 1.43, -1.56])
@@ -697,15 +730,20 @@ def make_pusher_rack():
     cs_rack = CrossSection([pts]).offset(-0.15, JoinType.Round, circular_segments=24).offset(0.15, JoinType.Round, circular_segments=24)
     bar = Manifold.extrude(cs_rack, RACK_HEIGHT).translate([0, 0, -RACK_HEIGHT / 2.0])
 
-    # Front pusher head: reinforced T-head with radiused wire notch
-    head = box(PUSHER_HEAD_L, PUSHER_HEAD_W, PUSHER_HEAD_H, center=True).translate(
-        [RACK_LENGTH / 2.0 + PUSHER_HEAD_L / 2.0, -3.1, 0]
+    # 50mm tapered triangle neck: from fixed rack section (Y=-7.5..-1.3, Z=-4.5..+4.5)
+    # to pointed 4.0mm x 4.0mm tip centered on Y=-3.1mm (wire axis), Z=0
+    x_base = RACK_LENGTH / 2.0 - 1.0
+    x_tip = RACK_LENGTH / 2.0 + PUSHER_HEAD_L
+    base_slice = box(1.0, 6.2, RACK_HEIGHT, center=False).translate([x_base, -7.5, -RACK_HEIGHT / 2.0])
+    tip_slice = box(0.5, PUSHER_HEAD_W, PUSHER_HEAD_H, center=False).translate(
+        [x_tip - 0.5, -3.1 - PUSHER_HEAD_W / 2.0, -PUSHER_HEAD_H / 2.0]
     )
-    wire_cradle = cylinder(PUSHER_HEAD_H + 2.0, 2.0, center=True, fn=32).translate(
-        [RACK_LENGTH / 2.0 + PUSHER_HEAD_L, -3.1, 0]
+    neck = (base_slice + tip_slice).hull()
+
+    wire_cradle = cylinder(PUSHER_HEAD_H + 4.0, 1.5, center=True, fn=32).translate(
+        [x_tip, -3.1, 0]
     )
-    head = head - wire_cradle
-    return bar + head
+    return (bar + neck) - wire_cradle
 
 
 def make_actuator_cover():
