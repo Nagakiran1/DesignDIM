@@ -62,11 +62,11 @@ PLATE_THICKNESS = 5.0
 # Vertical height scaled for MG996R:
 DRUM_HEIGHT = 68.0              # Bottom plate bottom to top plate top
 CLEARANCE_H = DRUM_HEIGHT - 2 * PLATE_THICKNESS  # 58.0 mm between plates
-WALL_THICKNESS = 5.5
+WALL_THICKNESS = 7.5
 
-# Support links in the housing space:
+# Support links in the housing space (fused solidly into 7.5mm walls):
 LINK_RADIUS = 59.0
-LINK_OD = 9.0
+LINK_OD = 11.0
 LINK_ID = 2.8                   # M3 pilot tap bore
 LINK_ANGLES = [150.0, 341.0]
 
@@ -93,7 +93,7 @@ SG90_W = 12.2                   # Datasheet body width
 SG90_H = 28.5                   # Datasheet casing height (32.5mm total with gear tower/spline)
 SG90_SPLINE_OFFSET = 6.0        # Distance from front edge to spline axis
 MG90S_HOLE_PITCH = 27.5         # Datasheet mounting hole center-to-center pitch
-MG90S_FLANGE_H = 7.5            # Distance from spline-end casing face to mounting ear underside (28.5 - 18.5 - 2.5)
+MG90S_FLANGE_H = 5.0            # 5.0mm standoff height (with 2.5mm top-plate gear-boss dip)
 
 # Option 1: 180° Direct Pinion Kinematics
 # Stroke = R_p * pi = 21.25 * 3.14159 = 66.76 mm (~6.68 cm)
@@ -415,9 +415,9 @@ def make_base_chassis():
     bearing_pocket = cylinder(4.0, PIVOT_BEARING_OD / 2.0, center=False, fn=64).translate([0, 0, PLATE_THICKNESS - 4.0])
     base = base - bearing_pocket
 
-    # 1. Extrude Left 40° Wall (130°-170°) and Right 38° Wall (322°-360°) with bullnose ends
-    left_wall = make_curved_wall_manifold(130.0, LEFT_SUPPORT_DEG, CLEARANCE_H).translate([0, 0, PLATE_THICKNESS])
-    right_wall = make_curved_wall_manifold(322.0, RIGHT_SUPPORT_DEG, CLEARANCE_H).translate([0, 0, PLATE_THICKNESS])
+    # 1. Extrude Left Wall (137.0°-170°) and Right Wall (322°-353.0°) completely clear of 0° and 130° wire grooves
+    left_wall = make_curved_wall_manifold(137.0, 33.0, CLEARANCE_H).translate([0, 0, PLATE_THICKNESS])
+    right_wall = make_curved_wall_manifold(322.0, 31.0, CLEARANCE_H).translate([0, 0, PLATE_THICKNESS])
 
     # 2. Extrude Support Link Pillars
     lx, ly = polar(LINK_RADIUS, LINK_ANGLES[0])
@@ -441,19 +441,19 @@ def make_base_chassis():
     cs_foot = CrossSection([poly_foot]).offset(-1.0, JoinType.Round, circular_segments=32).offset(1.0, JoinType.Round, circular_segments=32)
     foot_m = Manifold.extrude(cs_foot, MOUNT_TAB_THICKNESS)
 
-    # Concave ski-jump gusset sweeping smoothly from 24mm wall height down to 6mm foot
-    r_g_in = PLATE_OUTER_R - 4.0
-    r_g_out = PLATE_OUTER_R + 7.6
+    # Concave ski-jump gusset sweeping smoothly from 42mm wall height down to 6mm foot (6.5mm thick)
+    r_g_in = PLATE_OUTER_R - 5.0
+    r_g_out = PLATE_OUTER_R + 9.5
     poly_g = []
     N_G = 16
     for i in range(N_G + 1):
         t = i / N_G
         gx = r_g_in + (r_g_out - r_g_in) * t
-        gz = MOUNT_TAB_THICKNESS + (24.0 - MOUNT_TAB_THICKNESS) * ((1.0 - t) ** 2)
+        gz = MOUNT_TAB_THICKNESS + (42.0 - MOUNT_TAB_THICKNESS) * ((1.0 - t) ** 2)
         poly_g.append([gx, gz])
     poly_g.append([r_g_in, MOUNT_TAB_THICKNESS])
     cs_g = CrossSection([poly_g[::-1]])  # CCW winding
-    gusset_m = Manifold.extrude(cs_g, 4.0).translate([0, 0, -2.0]).rotate([90, 0, 0])
+    gusset_m = Manifold.extrude(cs_g, 6.5).translate([0, 0, -3.25]).rotate([90, 0, 0])
 
     full_single_foot = foot_m + gusset_m
     shole = cylinder(MOUNT_TAB_THICKNESS + 4.0, MOUNT_TAB_HOLE_D / 2.0, center=False, fn=32).translate([MOUNT_TAB_RADIUS, 0, -2])
@@ -468,7 +468,7 @@ def make_base_chassis():
     chassis = base + left_wall + right_wall + left_pillar + right_pillar + mounting_feet
 
     # Cut M3 screw pilot holes into uprights and pillars
-    for a in [140.0, 162.0, 330.0, 350.0]:
+    for a in [141.0, 163.0, 329.0, 349.0]:
         hx, hy = polar(PLATE_OUTER_R - WALL_THICKNESS / 2.0, a)
         chassis = chassis - cylinder(14.0, LINK_ID / 2.0, center=False, fn=32).translate([hx, hy, DRUM_HEIGHT - PLATE_THICKNESS - 12])
 
@@ -490,7 +490,7 @@ def make_top_plate():
     plate = plate - recess
 
     # Countersunk M3 screw holes matching side walls and pillars
-    for a in [140.0, 162.0, 330.0, 350.0]:
+    for a in [141.0, 163.0, 329.0, 349.0]:
         hx, hy = polar(PLATE_OUTER_R - WALL_THICKNESS / 2.0, a)
         hole = cylinder(PLATE_THICKNESS + 4, 1.6, center=False, fn=32).translate([hx, hy, -2])
         csink = cylinder(2.5, 3.2, center=False, fn=32).translate([hx, hy, PLATE_THICKNESS - 2.5])
@@ -503,12 +503,12 @@ def make_top_plate():
         csink = cylinder(2.5, 3.2, center=False, fn=32).translate([lx_, ly_, PLATE_THICKNESS - 2.5])
         plate = plate - hole - csink
 
-    # Servo 2 (MG90S) Low-Profile Screw-Holding Standoffs on upper face (no enclosing box):
-    # Standoffs rise only MG90S_FLANGE_H (7.5mm) above top plate to meet the MG90S mounting ears;
-    # mounting holes at datasheet pitch (27.5mm center-to-center).
+    # Servo 2 (MG90S) Low-Profile 5.0mm Screw-Holding Beams + Stepped Gear-Boss Dip:
+    # Standoffs rise 5.0mm above top plate (27.5mm hole pitch), while the 2.6mm dip accommodates
+    # the MG90S main gear boss (Ø12.4mm at (0,0)) + secondary gear dome (Ø6.4mm at X=-6.0mm).
     s2_cx = -(SG90_L / 2.0 - SG90_SPLINE_OFFSET)  # -5.4 mm
     ear_x_offset = MG90S_HOLE_PITCH / 2.0         # 13.75 mm
-    standoff_h = MG90S_FLANGE_H                   # 7.5 mm
+    standoff_h = MG90S_FLANGE_H                   # 5.0 mm
     post1 = box(6.5, SG90_W + 2.0, standoff_h, center=False).translate(
         [s2_cx + ear_x_offset - 3.25, -(SG90_W + 2.0) / 2.0, PLATE_THICKNESS]
     )
@@ -519,15 +519,20 @@ def make_top_plate():
         [s2_cx - (SG90_L + 0.6) / 2.0, -(SG90_W + 0.6) / 2.0, PLATE_THICKNESS]
     )
     spline_bore = cylinder(PLATE_THICKNESS + 4.0, 6.0, center=False, fn=48).translate([0, 0, -2.0])
+    # 4.0mm deep dip on top face for MG90S stepped spindle housing + secondary gear dome
+    gear_dip_main = cylinder(4.2, 6.2, center=False, fn=48).translate([0, 0, PLATE_THICKNESS - 4.0])
+    gear_dip_dome = cylinder(4.2, 3.2, center=False, fn=32).translate([-6.0, 0, PLATE_THICKNESS - 4.0])
+    gear_dip_bridge = box(6.0, 6.4, 4.2, center=False).translate([-6.0, -3.2, PLATE_THICKNESS - 4.0])
+    gear_dip = gear_dip_main + gear_dip_dome + gear_dip_bridge
 
-    s2_ear1 = cylinder(standoff_h + 4.0, 0.9, center=False, fn=32).translate(
-        [s2_cx + ear_x_offset, 0, PLATE_THICKNESS - 1.5]
+    s2_ear1 = cylinder(standoff_h + 3.0, 0.9, center=False, fn=32).translate(
+        [s2_cx + ear_x_offset, 0, PLATE_THICKNESS - 2.0]
     )
-    s2_ear2 = cylinder(standoff_h + 4.0, 0.9, center=False, fn=32).translate(
-        [s2_cx - ear_x_offset, 0, PLATE_THICKNESS - 1.5]
+    s2_ear2 = cylinder(standoff_h + 3.0, 0.9, center=False, fn=32).translate(
+        [s2_cx - ear_x_offset, 0, PLATE_THICKNESS - 2.0]
     )
 
-    plate = (plate + post1 + post2) - s2_body_clear - spline_bore - s2_ear1 - s2_ear2
+    plate = (plate + post1 + post2) - s2_body_clear - spline_bore - gear_dip - s2_ear1 - s2_ear2
 
     return plate.translate([0, 0, DRUM_HEIGHT - PLATE_THICKNESS])
 
